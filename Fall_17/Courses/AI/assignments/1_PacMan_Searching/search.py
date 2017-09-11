@@ -108,7 +108,6 @@ def depthFirstSearch(problem):
     
     # Stack will hold node and it's direction list 
     nodeStack.push((problem.getStartState(), []))
-    # add start node into fringe list for consistency
     while nodeStack.isEmpty() == False:
         tempNode  = nodeStack.pop()
         node      = tempNode[0]  
@@ -116,7 +115,6 @@ def depthFirstSearch(problem):
         if node in visited:
             continue
         visited.append(node)    # Mark node visited
-        #print "visiting: ", node
         if problem.isGoalState(node) == True: 
             # Path found
             # solutions.append(direction)
@@ -128,9 +126,7 @@ def depthFirstSearch(problem):
             break
 
         for suc in reversed(problem.getSuccessors(node)):
-            # Add successors in fringeList if not visited or already added
             if suc[0] not in visited:
-                #print "Adding Successor: ", suc[0]
                 nodeDir = list(direction)  # Give each successor separate copy of direction
                 nodeDir.append(suc[1])
                 nodeStack.push((suc[0], nodeDir))
@@ -192,18 +188,14 @@ def uniformCostSearch(problem):
         nodeCost  = tempNode[2]
         if node in visited:
             continue
-        #print "visiting" , node , "with nodeCost", nodeCost
         visited.append(node)    # Mark node visited
         fringeList.remove(node) # Remove node from fringeList
-        #print "Visinting ", node
         if problem.isGoalState(node) == True: 
             # Path found
             break
 
         for suc in problem.getSuccessors(node):
-            # Add successors in fringeList if not visited or already added
             if suc[0] not in visited:
-                #print suc
                 nodeDir = list(direction)  # Give each successor separate copy of direction
                 nodeDir.append(suc[1])
                 nodePQueue.push((suc[0], nodeDir,nodeCost + suc[2]), nodeCost + suc[2])
@@ -222,7 +214,8 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
+
 
 
 # Abbreviations
