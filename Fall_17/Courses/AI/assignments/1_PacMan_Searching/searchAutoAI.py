@@ -99,38 +99,70 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     
     "*** YOUR CODE HERE ***"
-    # util.raiseNotDefined()
+    #util.raiseNotDefined()
     from game import Directions
     from util import Stack
-    nodeStack  = Stack()  # Create stack for holding exploration
-    visited    = []       # To track visited nodes 
-    fringeList = []       # To track added successors
-    
-    # Stack will hold node and it's direction list 
-    nodeStack.push((problem.getStartState(), []))
-    fringeList.append(problem.getStartState())
+    #s = Directions.SOUTH;
+    #w = Directions.WEST;
+    path = []
+    nodeStack = Stack()
+    dirStack = Stack()
+    visited = []
+    fringeList = []
+    nodeStack.push([problem.getStartState(), ''])
     while nodeStack.isEmpty() == False:
-        tempNode  = nodeStack.pop()
-        node      = tempNode[0]  
-        direction = tempNode[1]
+        Node = nodeStack.pop()
+        visitingNode = Node[0]
+        visitingDir = Node[1]
+        # print "Poped:" , visitingNode 
         
-        visited.append(node)    # Mark node visited
-        fringeList.remove(node) # Remove node from fringeList
+        # check if node is successor of lastly visited node
+        IsSuccessor = False
+        if len(visited) > 0:
+            for i in problem.getSuccessors(visited[-1]):
+                if i[0] == visitingNode:
+                    IsSuccessor = True;
 
-        if problem.isGoalState(node) == True: 
-            # Path found
-            break
+            if IsSuccessor == False:
+                print visitingNode, " Is not a successor of " , visited[-1]
+                print "NEED TO GO BACK:" ,visitingNode 
+                print path
+                print visited
+                print len(visited)
+                i = len(visited) - 1
+                print "successors of: " , visitingNode , "are"
+                print problem.getSuccessors(visitingNode)
+                SuccessorFound = False
+                while i > 0 and SuccessorFound == False:
 
-        for suc in problem.getSuccessors(node):
-            # Add successors in fringeList if not visited or already added
-            if suc[0] not in visited and suc[0] not in fringeList:
-                nodeDir = list(direction)  # Give each successor separate copy of direction
-                nodeDir.append(suc[1])
-                nodeStack.push((suc[0], nodeDir))
-                fringeList.append(suc[0])
+                    for vis in problem.getSuccessors(visitingNode):
+                        if visited[i] == vis[0]:
+                            SuccessorFound = True;
+                            print "Successor ", visited[i] , "Found";
+                    if SuccessorFound == False:
+                        print visited[i]
+                        print i, "Opposite of " , path[i-1] , '=' , Opposite(path[i-1])
+                        path.append(Opposite(path[i-1]))
+                        i-=1
+                
+        if visitingDir != '':
+            path.append(visitingDir)
+            print "Direction appended ", visitingDir
+        """if dirStack.isEmpty() == False:
+            visitingDir = dirStack.pop()
+            path.append(visitingDir)
+            print "Direction: ", visitingDir , " added"
+        """
+        visited.append(visitingNode)
+        for i in reversed(problem.getSuccessors(visitingNode)):
+            if i[0] not in visited and i[0] not in fringeList:
+                #path.append(i[1])
+                nodeStack.push([i[0],i[1]])
+                #dirStack.push(i[1])
+                fringeList.append(i[0])
+                #print "pushing :" , i
 
-    return direction
-
+    return path
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
