@@ -144,7 +144,7 @@ def breadthFirstSearch(problem):
     nodeQueue  = Queue()  # Create stack for holding exploration
     visited    = []       # To track visited nodes 
     
-    # Stack will hold node and it's direction list 
+    # Queue will hold node and it's direction list 
     nodeQueue.push((problem.getStartState(), []))
     while nodeQueue.isEmpty() == False:
         tempNode  = nodeQueue.pop()
@@ -176,11 +176,9 @@ def uniformCostSearch(problem):
     from util import PriorityQueue
     nodePQueue  = PriorityQueue()  # Create stack for holding exploration
     visited    = []       # To track visited nodes 
-    fringeList = []       # To track added successors
     
-    # Stack will hold node and it's direction list 
+    # Priority Queue will hold node and it's direction list 
     nodePQueue.push((problem.getStartState(), [], 0), 0)
-    fringeList.append(problem.getStartState())
     while nodePQueue.isEmpty() == False:
         tempNode  = nodePQueue.pop()
         node      = tempNode[0]  
@@ -189,7 +187,6 @@ def uniformCostSearch(problem):
         if node in visited:
             continue
         visited.append(node)    # Mark node visited
-        fringeList.remove(node) # Remove node from fringeList
         if problem.isGoalState(node) == True: 
             # Path found
             break
@@ -199,7 +196,6 @@ def uniformCostSearch(problem):
                 nodeDir = list(direction)  # Give each successor separate copy of direction
                 nodeDir.append(suc[1])
                 nodePQueue.push((suc[0], nodeDir,nodeCost + suc[2]), nodeCost + suc[2])
-                fringeList.append(suc[0])
     return direction
 
 
@@ -215,7 +211,31 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
     # util.raiseNotDefined()
+    from game import Directions
+    from util import PriorityQueue
+    nodePQueue = PriorityQueue()  # Create stack for holding exploration
+    visited    = []               # To track visited nodes 
+    
+    # Priority Queue will hold node and it's direction list 
+    nodePQueue.push((problem.getStartState(), [], 0), 0)
+    while nodePQueue.isEmpty() == False:
+        tempNode  = nodePQueue.pop()
+        node      = tempNode[0]  
+        direction = tempNode[1]
+        nodeCost  = tempNode[2]
+        if node in visited:
+            continue
+        visited.append(node)    # Mark node visited
+        if problem.isGoalState(node) == True: 
+            # Path found
+            break
 
+        for suc in problem.getSuccessors(node):
+            if suc[0] not in visited:
+                nodeDir = list(direction)  # Give each successor separate copy of direction
+                nodeDir.append(suc[1])
+                nodePQueue.push((suc[0], nodeDir,nodeCost + suc[2]), nodeCost + suc[2] + heuristic(suc[0], problem))
+    return direction
 
 
 # Abbreviations
