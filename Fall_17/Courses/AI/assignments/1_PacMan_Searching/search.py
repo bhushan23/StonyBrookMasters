@@ -146,17 +146,16 @@ def breadthFirstSearch(problem):
     # util.raiseNotDefined()
 
     from game import Directions
-    from util import Stack
-    nodeStack  = Stack()  # Create stack for holding exploration
+    from util import Queue
+    nodeQueue  = Queue()  # Create stack for holding exploration
     visited    = []       # To track visited nodes 
     fringeList = []       # To track added successors
-    solutions  = []
     
     # Stack will hold node and it's direction list 
-    nodeStack.push((problem.getStartState(), []))
+    nodeQueue.push((problem.getStartState(), []))
     fringeList.append(problem.getStartState())
-    while nodeStack.isEmpty() == False:
-        tempNode  = nodeStack.pop()
+    while nodeQueue.isEmpty() == False:
+        tempNode  = nodeQueue.pop()
         node      = tempNode[0]  
         direction = tempNode[1]
         
@@ -165,9 +164,6 @@ def breadthFirstSearch(problem):
 
         if problem.isGoalState(node) == True: 
             # Path found
-            solutions.append(direction)
-            # Comment out following break to allow searching of 
-            # other least cost solution
             break
 
         for suc in problem.getSuccessors(node):
@@ -175,9 +171,9 @@ def breadthFirstSearch(problem):
             if suc[0] not in visited and suc[0] not in fringeList:
                 nodeDir = list(direction)  # Give each successor separate copy of direction
                 nodeDir.append(suc[1])
-                nodeStack.push((suc[0], nodeDir))
+                nodeQueue.push((suc[0], nodeDir))
                 fringeList.append(suc[0])
-    return min(solutions)
+    return direction
 
 
 def uniformCostSearch(problem):
