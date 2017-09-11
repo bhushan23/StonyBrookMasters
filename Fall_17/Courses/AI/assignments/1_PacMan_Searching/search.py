@@ -93,32 +93,30 @@ def depthFirstSearch(problem):
 
     To get started, you might want to try some of these simple commands to
     understand the search problem that is being passed in:
-    """
+    """ """
     print "Start:", problem.getStartState()
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
-    
+    """
     "*** YOUR CODE HERE ***"
     # util.raiseNotDefined()
     from game import Directions
     from util import Stack
     nodeStack  = Stack()  # Create stack for holding exploration
     visited    = []       # To track visited nodes 
-    fringeList = []       # To track added successors
     #solutions = []       # Track all possible paths
     
     # Stack will hold node and it's direction list 
     nodeStack.push((problem.getStartState(), []))
     # add start node into fringe list for consistency
-    fringeList.append(problem.getStartState())
     while nodeStack.isEmpty() == False:
         tempNode  = nodeStack.pop()
         node      = tempNode[0]  
         direction = tempNode[1]
-        
+        if node in visited:
+            continue
         visited.append(node)    # Mark node visited
-        fringeList.remove(node) # Remove node from fringeList
-
+        #print "visiting: ", node
         if problem.isGoalState(node) == True: 
             # Path found
             # solutions.append(direction)
@@ -129,13 +127,13 @@ def depthFirstSearch(problem):
             # for other least cost path
             break
 
-        for suc in problem.getSuccessors(node):
+        for suc in reversed(problem.getSuccessors(node)):
             # Add successors in fringeList if not visited or already added
-            if suc[0] not in visited and suc[0] not in fringeList:
+            if suc[0] not in visited:
+                #print "Adding Successor: ", suc[0]
                 nodeDir = list(direction)  # Give each successor separate copy of direction
                 nodeDir.append(suc[1])
                 nodeStack.push((suc[0], nodeDir))
-                fringeList.append(suc[0])
 
     # return min(solutions)
     return direction
@@ -149,18 +147,17 @@ def breadthFirstSearch(problem):
     from util import Queue
     nodeQueue  = Queue()  # Create stack for holding exploration
     visited    = []       # To track visited nodes 
-    fringeList = []       # To track added successors
     
     # Stack will hold node and it's direction list 
     nodeQueue.push((problem.getStartState(), []))
-    fringeList.append(problem.getStartState())
     while nodeQueue.isEmpty() == False:
         tempNode  = nodeQueue.pop()
         node      = tempNode[0]  
         direction = tempNode[1]
         
+        if node in visited:
+            continue
         visited.append(node)    # Mark node visited
-        fringeList.remove(node) # Remove node from fringeList
 
         if problem.isGoalState(node) == True: 
             # Path found
@@ -168,18 +165,52 @@ def breadthFirstSearch(problem):
 
         for suc in problem.getSuccessors(node):
             # Add successors in fringeList if not visited or already added
-            if suc[0] not in visited and suc[0] not in fringeList:
+            if suc[0] not in visited:
                 nodeDir = list(direction)  # Give each successor separate copy of direction
                 nodeDir.append(suc[1])
                 nodeQueue.push((suc[0], nodeDir))
-                fringeList.append(suc[0])
     return direction
 
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
+    from game import Directions
+    from util import PriorityQueue
+    nodePQueue  = PriorityQueue()  # Create stack for holding exploration
+    visited    = []       # To track visited nodes 
+    fringeList = []       # To track added successors
+    
+    # Stack will hold node and it's direction list 
+    nodePQueue.push((problem.getStartState(), [], 0), 0)
+    fringeList.append(problem.getStartState())
+    while nodePQueue.isEmpty() == False:
+        tempNode  = nodePQueue.pop()
+        node      = tempNode[0]  
+        direction = tempNode[1]
+        nodeCost  = tempNode[2]
+        if node in visited:
+            continue
+        #print "visiting" , node , "with nodeCost", nodeCost
+        visited.append(node)    # Mark node visited
+        fringeList.remove(node) # Remove node from fringeList
+        #print "Visinting ", node
+        if problem.isGoalState(node) == True: 
+            # Path found
+            break
+
+        for suc in problem.getSuccessors(node):
+            # Add successors in fringeList if not visited or already added
+            if suc[0] not in visited:
+                #print suc
+                nodeDir = list(direction)  # Give each successor separate copy of direction
+                nodeDir.append(suc[1])
+                nodePQueue.push((suc[0], nodeDir,nodeCost + suc[2]), nodeCost + suc[2])
+                fringeList.append(suc[0])
+    return direction
+
+
 
 def nullHeuristic(state, problem=None):
     """
