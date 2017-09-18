@@ -367,69 +367,34 @@ def cornersHeuristic(state, problem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
-    """
-    curNode = state[0]
-    #print state
-    #print "Heuristc for corners" , corners
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-    import math 
-    #""" 
-    # Euclidian distance
-    """
-    if state[0] in corners:
-        return 0
-    
-    minDistance = 10000.00
-    for corner in state[1]:
-        val = math.sqrt((corner[0] - curNode[0])**2 + (corner[1] - curNode[1])**2)
-        if minDistance > val:
-            minDistance = val
-    if minDistance == 10000.00:
-        return 0;
-    return minDistance
-    """
-   
-    """
-        Manhattan distance
-    """
-    """
-    minDistance = 10000.00
-    for corner in corners:
-        val = (abs(corner[0] - curNode[0]) + abs(corner[1] - curNode[1]))
-        if minDistance > val:
-            minDistance = val
-    if minDistance == 10000.00:
-        return 0;
-    return minDistance
-    """
     "*** YOUR CODE HERE ***"
-    #return 0 # Default to trivial solution
     import math
-    curNode = state[0]
-    corners = list(state[1])
+
+    curNode         = state[0]
+    corners         = list(state[1])
     maxDistInSystem = 10000.00
-    totalDist = 0
-    cornerLen = len(corners)
-    print curNode
+    totalDist       = 0
+    cornerLen       = len(corners)
+    
+    # Greedy approach to visit closest corner first
+    # then next closest corner and so on.
+    # Heuristic value is total path travelled.
     for i in range(0, cornerLen):
         minDistance = maxDistInSystem
-        minCorner = curNode
-        print corners
+        minCorner   = curNode
+
         for corner in corners:
             val = (abs(corner[0] - curNode[0]) + abs(corner[1] - curNode[1]))
             #val = math.sqrt((corner[0] - curNode[0])**2 + (corner[1] - curNode[1])**2)
             if minDistance > val:
                 minDistance = val
-                minCorner = corner
+                minCorner   = corner
         if minDistance == maxDistInSystem:
             minDistance = 0
         else:
             curNode = minCorner
             corners.remove(minCorner)
-        print "MIN CORNER", minCorner
         totalDist += minDistance
-    print totalDist
     return totalDist
 
 class AStarCornersAgent(SearchAgent):
@@ -530,115 +495,66 @@ def foodHeuristic(state, problem):
     "*** YOUR CODE HERE ***"
     import math
     from copy import deepcopy
-    curNode = state[0]
-    globalCorners = list(foodGrid.asList())
     
-
+    curNode         = state[0]
+    globalFoods     = list(foodGrid.asList())
     maxDistInSystem = 10000.00
-    globalMin = maxDistInSystem
-    cornerLen = len(globalCorners)
-    #print curNode
-    minDistance = 0
+    globalMin       = maxDistInSystem
+    foodLen         = len(globalFoods)
+    minDistance     = 0
     
-     
-    for j in range(0, cornerLen):
+    # Heuristic is minimum total path travelled for eating all food.
+    # Just iterating over next closest remaining food will not lead to optimal solution
+    # Hence, Make every food node as first visiting node and apply greedy approach 
+    # to visit closest in remaining food nodes.
+    # Optimial path will minimum of all.
+    for j in range(0, foodLen):
         totalDist = 0
-        curNode = state[0]
-        #print "Stating with" ,curNode
-        #print globalCorners
-        corners = list(globalCorners)
-        if len(corners) > 0:
+        curNode   = state[0]
+        foods     = list(globalFoods)
+        
+        if len(foods) > 0:
+            # Visit first node
             minDistance = maxDistInSystem
-            minCorner = curNode
-            corner = corners[0]
-            totalDist = (abs(corner[0] - curNode[0]) + abs(corner[1] - curNode[1]))
-            curNode = corner
-            corners.remove(corner)
-            for i in range(0, cornerLen-1):
+            minFood     = curNode
+            food        = foods[0]
+            totalDist   = (abs(food[0] - curNode[0]) + abs(food[1] - curNode[1]))
+            curNode     = food
+            foods.remove(food)
+            
+            # Find minimum path for remaining food nodes
+            for i in range(0, foodLen-1):
                 minDistance = maxDistInSystem
-                minCorner = curNode
-                #print corners
-                for corner in corners:
-                    val = (abs(corner[0] - curNode[0]) + abs(corner[1] - curNode[1]))
-                    #val = math.sqrt((corner[0] - curNode[0])**2 + (corner[1] - curNode[1])**2)
+                minFood     = curNode
+                for food in foods:
+                    val = (abs(food[0] - curNode[0]) + abs(food[1] - curNode[1]))
+                    # val = math.sqrt((food[0] - curNode[0])**2 + (food[1] - curNode[1])**2)
                     if minDistance > val:
                         minDistance = val
-                        minCorner = corner
+                        minFood     = food
            
                 if minDistance == maxDistInSystem:
                     minDistance = 0
                 else:
-                    curNode = deepcopy(minCorner)
-                    corners.remove(minCorner)
+                    curNode = deepcopy(minFood)
+                    foods.remove(minFood)
                 totalDist += minDistance
-                #print "MIN CORNER", minCorner, minDistance, totalDist
-
-        tNode = globalCorners[0]
-        globalCorners.remove(tNode)
-        globalCorners.append(tNode)
+        # Put first node at last
+        # to make sure we visit 2nd node first and so on... in next iteration
+        tNode = globalFoods[0]
+        globalFoods.remove(tNode)
+        globalFoods.append(tNode)
 
         if globalMin > totalDist:
             globalMin = totalDist
-    
+   
+    # If graph is empty 
     if globalMin == maxDistInSystem:
         globalMin = 0
-    #print globalMin 
+    
     return globalMin
  
-    """
-    import math 
-    from util import PriorityQueue
-    from util import Queue
-    from game import Actions
-    #print state 
-    #print foodGrid
-    row = foodGrid.width #len(foodGrid)
-    column = foodGrid.height #len(foodGrid[0])
-    walls = problem.walls
-    #print walls
-    #print row, column
-    #callingFoodHeuristicForFirstTime = True
-    #minDistanceQ = [[ PriorityQueue() for _ in range(column)] for _ in range(row)]
-    minDistanceList = [[ [] for _ in range(column)] for _ in range(row)]
-    foodList = foodGrid.asList()
-    if calHeuristic.callingFoodHeuristicForFirstTime == True:
-        for foodNode in foodList:
-            fQueue = Queue()
-            visited = []
-            fQueue.push((foodNode, 0))  
-            while fQueue.isEmpty() == False:
-                node = fQueue.pop()
-                if node[0] in visited:
-                    continue
-                visited.append(node[0])
-                #print visited
-                #print node
-                # minDistanceQ[node[0][0]][node[0][1]].push(node[1], node[1])
-                minDistanceList[node[0][0]][node[0][1]].append(node[1])
-                for dir, vec in Actions._directionsAsList:
-                    dx, dy = vec
-                    next_y = node[0][0] + dy
-                    next_x = node[0][1] + dx
-                    column = walls.height
-                    row = walls.width
-                    if (next_y > column-1 or next_y < 0 or next_x > row-1 or next_x < 0): 
-                        continue
-                    #print next_y, next_x, column, row
-                    if not walls[next_x][next_y] and (next_x,next_y) not in visited:
-                        fQueue.push(((next_x,next_y),node[1]+1))
-        #callingFoodHeuristicForFirstTime = True
-        print position
-        problem.heuristicInfo['minDistaceDict'] = minDistanceList  
-        calHeuristic.callingFoodHeuristicForFirstTime = False
-    #retval = minDistanceQ[position[0]][position[1]].pop()         
-    #return retval 
-    #print "Disance List" , minDistanceList[position[0]][position[1]]
-    if len(minDistanceList[position[0]][position[1]]) == 0:
-        return 0
-        return min(minDistanceList[position[0]][position[1]])
-    """
-    #return 0
-    
+       
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
     def registerInitialState(self, state):
