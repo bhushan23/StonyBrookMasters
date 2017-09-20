@@ -275,11 +275,11 @@ class CornersProblem(search.SearchProblem):
         """
         Stores the walls, pacman's starting position and corners.
         """
-        self.walls = startingGameState.getWalls()
+        self.walls            = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
-        self.startState = self.startingPosition
-        top, right = self.walls.height-2, self.walls.width-2
-        self.corners = ((1,1), (1,top), (right, 1), (right, top))
+        self.startState       = self.startingPosition
+        top, right            = self.walls.height-2, self.walls.width-2
+        self.corners          = ((1,1), (1,top), (right, 1), (right, top))
         for corner in self.corners:
             if not startingGameState.hasFood(*corner):
                 print 'Warning: no food in corner ' + str(corner)
@@ -288,7 +288,7 @@ class CornersProblem(search.SearchProblem):
         # in initializing the problem
         "*** YOUR CODE HERE ***"
         self.visitedCorners = list(self.corners)
-        self.start = (self.startingPosition, self.visitedCorners) # list(self.corners))
+        self.start          = (self.startingPosition, self.visitedCorners) 
 
     def getStartState(self):
         """
@@ -353,6 +353,67 @@ class CornersProblem(search.SearchProblem):
             if self.walls[x][y]: return 999999
         return len(actions)
 
+def greedyHeuristicForClosestPath(startingState, foodList):
+    import math
+    from copy import deepcopy
+    
+    globalFoods     = list(foodList)
+    maxDistInSystem = 10000.00
+    globalMin       = maxDistInSystem
+    foodLen         = len(globalFoods)
+    minDistance     = 0
+    
+    # Heuristic is minimum total path travelled for eating all food.
+    # Just iterating over next closest remaining food will not lead to optimal solution
+    # Hence, Make every food node as first visiting node and apply greedy approach 
+    # to visit closest in remaining food nodes and so on.
+    # Optimial path will be minimum of all.
+    for j in range(0, foodLen):
+        totalDist = 0
+        curNode   = startingState
+        foods     = list(globalFoods)
+        
+        if len(foods) > 0:
+            # Visit first node
+            minDistance = maxDistInSystem
+            minFood     = curNode
+            food        = foods[0]
+            totalDist   = (abs(food[0] - curNode[0]) + abs(food[1] - curNode[1]))
+            curNode     = food
+            foods.remove(food)
+            
+            # Find minimum path for remaining food nodes
+            for i in range(0, foodLen-1):
+                minDistance = maxDistInSystem
+                minFood     = curNode
+                for food in foods:
+                    val = (abs(food[0] - curNode[0]) + abs(food[1] - curNode[1]))
+                    # val = math.sqrt((food[0] - curNode[0])**2 + (food[1] - curNode[1])**2)
+                    if minDistance > val:
+                        minDistance = val
+                        minFood     = food
+           
+                if minDistance == maxDistInSystem:
+                    minDistance = 0
+                else:
+                    curNode = deepcopy(minFood)
+                    foods.remove(minFood)
+                totalDist += minDistance
+        # Put first node at last
+        # to make sure we visit 2nd node first and so on... in next iteration
+        tNode = globalFoods[0]
+        globalFoods.remove(tNode)
+        globalFoods.append(tNode)
+
+        if globalMin > totalDist:
+            globalMin = totalDist
+   
+    # If graph is empty 
+    if globalMin == maxDistInSystem:
+        globalMin = 0
+    
+    return globalMin
+
 def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -367,34 +428,9 @@ def cornersHeuristic(state, problem):
     admissible (as well as consistent).
     """
     "*** YOUR CODE HERE ***"
-    import math
-
-    curNode         = state[0]
-    corners         = list(state[1])
-    maxDistInSystem = 10000.00
-    totalDist       = 0
-    cornerLen       = len(corners)
-    
-    # Greedy approach to visit closest corner first
-    # then next closest corner and so on.
-    # Heuristic value is total path travelled.
-    for i in range(0, cornerLen):
-        minDistance = maxDistInSystem
-        minCorner   = curNode
-
-        for corner in corners:
-            val = (abs(corner[0] - curNode[0]) + abs(corner[1] - curNode[1]))
-            #val = math.sqrt((corner[0] - curNode[0])**2 + (corner[1] - curNode[1])**2)
-            if minDistance > val:
-                minDistance = val
-                minCorner   = corner
-        if minDistance == maxDistInSystem:
-            minDistance = 0
-        else:
-            curNode = minCorner
-            corners.remove(minCorner)
-        totalDist += minDistance
-    return totalDist
+    # Make call to greedyHeuristicClosestPath which returns minimum cost 
+    # to reach the goal i.e. visit all the corners
+    return greedyHeuristicForClosestPath(state[0], state[1])
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -492,67 +528,9 @@ def foodHeuristic(state, problem):
     position, foodGrid = state
     
     "*** YOUR CODE HERE ***"
-    import math
-    from copy import deepcopy
-    
-    curNode         = state[0]
-    globalFoods     = list(foodGrid.asList())
-    maxDistInSystem = 10000.00
-    globalMin       = maxDistInSystem
-    foodLen         = len(globalFoods)
-    minDistance     = 0
-    
-    # Heuristic is minimum total path travelled for eating all food.
-    # Just iterating over next closest remaining food will not lead to optimal solution
-    # Hence, Make every food node as first visiting node and apply greedy approach 
-    # to visit closest in remaining food nodes.
-    # Optimial path will minimum of all.
-    for j in range(0, foodLen):
-        totalDist = 0
-        curNode   = state[0]
-        foods     = list(globalFoods)
-        
-        if len(foods) > 0:
-            # Visit first node
-            minDistance = maxDistInSystem
-            minFood     = curNode
-            food        = foods[0]
-            totalDist   = (abs(food[0] - curNode[0]) + abs(food[1] - curNode[1]))
-            curNode     = food
-            foods.remove(food)
-            
-            # Find minimum path for remaining food nodes
-            for i in range(0, foodLen-1):
-                minDistance = maxDistInSystem
-                minFood     = curNode
-                for food in foods:
-                    val = (abs(food[0] - curNode[0]) + abs(food[1] - curNode[1]))
-                    # val = math.sqrt((food[0] - curNode[0])**2 + (food[1] - curNode[1])**2)
-                    if minDistance > val:
-                        minDistance = val
-                        minFood     = food
-           
-                if minDistance == maxDistInSystem:
-                    minDistance = 0
-                else:
-                    curNode = deepcopy(minFood)
-                    foods.remove(minFood)
-                totalDist += minDistance
-        # Put first node at last
-        # to make sure we visit 2nd node first and so on... in next iteration
-        tNode = globalFoods[0]
-        globalFoods.remove(tNode)
-        globalFoods.append(tNode)
-
-        if globalMin > totalDist:
-            globalMin = totalDist
-   
-    # If graph is empty 
-    if globalMin == maxDistInSystem:
-        globalMin = 0
-    
-    return globalMin
- 
+    # Make call to greedyHeuristicClosestPath which returns minimum cost 
+    # to reach the goal i.e. visit all the food nodes.
+    return greedyHeuristicForClosestPath(position, foodGrid.asList())
        
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"

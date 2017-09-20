@@ -98,8 +98,13 @@ def depthFirstSearch(problem):
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    "*** YOUR CODE HERE ***"
-    # util.raiseNotDefined()
+    # 
+    # Following is iterative implementation of Depth First Search algorithm
+    # 1. Push starting node on stack or goal is visited
+    # 2. Until, stack is empty
+    #    a. Pop from stack and mark it as visited
+    #    b. add successor of unvisited popped node into stack
+    #    
     from game import Directions
     from util import Stack
     nodeStack  = Stack()  # Create stack for holding exploration
