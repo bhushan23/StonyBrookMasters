@@ -363,7 +363,7 @@ def greedyHeuristicForClosestPath(startingState, foodList):
     foodLen         = len(globalFoods)
     minDistance     = 0
     
-    # Heuristic is minimum total path travelled for eating all food.
+    # Heuristic finds minimum total path travelled for eating all food.
     # Just iterating over next closest remaining food will not lead to optimal solution
     # Hence, Make every food node as first visiting node and apply greedy approach 
     # to visit closest in remaining food nodes and so on.
