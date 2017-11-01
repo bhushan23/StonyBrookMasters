@@ -129,7 +129,7 @@ pairAll(X, [H|T], [[X, H]|List]) :-
   pairAll(X, T, List).
 
 
-% transitiveClosure([[1,2],[3,4],[2,3],[5,6]],L2).
+% transitiveClosure([[1,2],[3,4],[2,3],[5,6]],L).
 transitiveClosure(L, L2) :-
   collectNodes(L, Nodes),
   getReachables(Nodes, Nodes, L, L2).
@@ -139,15 +139,13 @@ transitiveClosure(L, L2) :-
 getReachables([], _,_,[]).
 getReachables([H|T], Nodes, L, R2) :-
   find_reachable_from2(H, L, R),
-  write('reachable from '),
-  write(H),
-  write(': '),
-  writeln(R),
+  %write('reachable from '),
+  %write(H),
+  %write(': '),
+  %writeln(R),
   pairAll(H, Nodes, Pairs),
-  writeln(Pairs),
-  %R=[[1,2],[3,4],[1,1]],
-  %Pairs=[[1,2],[3,4]],
+  %writeln(Pairs),
   findall([X,Y],(member(Y,R), member([X,Y], Pairs)), Reachable),
-  writeln(Reachable),
+  %writeln(Reachable),
   getReachables(T, Nodes, L, R1),
   append(Reachable, R1, R2).
