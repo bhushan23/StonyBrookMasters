@@ -642,8 +642,17 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
         else:
             gameDisplay = display
             rules.quiet = False
+        import resource
+        import time
         game = rules.newGame( layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
+        memStart = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        timeStart = time.time()
         game.run()
+        timeElapsed = (time.time() - timeStart)
+        print "TIME: ", timeElapsed * 10 ** 3
+        print "MEM: ", (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - memStart)
+
+
         if not beQuiet: games.append(game)
 
         if record:

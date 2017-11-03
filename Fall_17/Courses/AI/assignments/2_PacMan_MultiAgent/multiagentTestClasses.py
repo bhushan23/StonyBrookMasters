@@ -381,7 +381,15 @@ class GraphGameTreeTest(testClasses.TestCase):
     def solveProblem(self, multiAgents):
         self.problem.reset()
         studentAgent = getattr(multiAgents, self.alg)(depth=self.depth)
+        import time
+        import resource
+        timeStart = time.time()
         action = studentAgent.getAction(self.problem.startState)
+        memStart = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        timeElapsed = (time.time() - timeStart)
+        print "TIME: ", timeElapsed * 10 ** 3
+        print "MEM: ", (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - memStart)
+
         generated = self.problem.generatedStates
         return action, " ".join([str(s) for s in sorted(generated)])
 
