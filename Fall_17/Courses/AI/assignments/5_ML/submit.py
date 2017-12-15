@@ -3,6 +3,7 @@ import pickle as pkl
 import argparse
 import csv
 import numpy as np
+import pandas as pd
 from math import log
 
 '''
@@ -57,6 +58,83 @@ def load_data(ftrain, ftest):
 
 num_feats = 274
 
+
+def getEntropy(positive, negative, total):
+    posRatio = (float(positive) / float(total))
+    negRatio = (float(negative) / float(total))
+    entropy = 0.0
+    if posRatio != 0:
+        entropy = -posRatio * log(posRatio, 2)
+    if negRatio != 0:
+        entropy -= negRatio * log (negRatio, 2)
+    return entropy
+ 
+#featureValSet = [1, 2, 3, 4, 5]
+
+def calculateOccurences(Data, featureNum):
+    count = 0
+    # count of pos and neg for 5 vals
+    pos = [0] * 5
+    neg = [0] * 5
+    # Using pandas
+
+    for i in range(0, len(pos)):
+        yPos = Data['Label'] == 1
+        yNeg = Data['Label'] == 0
+        xPos = Data[featureNum] == i+1
+        pos[i] = Data[xPos & yPos].shape[0]
+        neg[i] = Data[yNeg & xPos].shape[0]
+    return pos,neg
+    '''
+    # Serial code where data is in array
+    for i in range(0, len(Xdata)):
+        # print Xdata[i][featureNum]-1
+        if Ydata[i] == 1:
+            pos[Xdata[i][featureNum]-1] += 1
+        else:
+            neg[Xdata[i][featureNum]-1] += 1
+    return pos,neg
+    '''
+
+def getMaxInfoGainFeature(remainingFeatures, Data):
+
+    positive = Data[Data['Label'] == 1].shape[0]
+    negative = Data[Data['Label'] == 0].shape[0]
+
+    #positive = Ydata.count(1)
+    #negative = Ydata.count(0)
+    total = positive + negative
+    
+    rootEntropy = getEntropy(positive, negative, total)
+    
+    print "ROOT: p=", positive, " n=", negative, " e=", rootEntropy
+    if rootEntropy == 0:
+        if total == positive:
+            return 'T'
+        else:
+            return 'F'
+
+    featureEntropy = []
+    for feature in remainingFeatures:
+        pos, neg = calculateOccurences(Data, feature)
+        infoGainSum = 0
+        #print "For Feature ", feature
+        #print "p=", pos, " n=", neg
+        
+        inforGainSum = 0
+        for i in range(len(pos)):
+            cTotal = pos[i] + neg[i]
+            if cTotal > 0:
+                cEntropy = getEntropy(pos[i], neg[i], cTotal)
+                infoGainSum += (float(cTotal)/float(total)) * float(cEntropy)
+        infoGain = rootEntropy - infoGainSum
+        featureEntropy.append(infoGain)  
+    #print "Feature Entropy", featureEntropy
+    maxGain = featureEntropy.index(max(featureEntropy))
+    #print "Max: ", max(featureEntropy)
+    return remainingFeatures[maxGain]
+
+
 #A random tree construction for illustration, do not use this in your code!
 def create_random_tree(depth):
     if(depth >= 7):
@@ -70,66 +148,27 @@ def create_random_tree(depth):
 
     for i in range(5):
         root.nodes[i] = create_random_tree(depth+1)
-
     return root
 
 
-def getEntropy(positive, negative, total):
-    posRatio = (float(positive) / float(total))
-    negRatio = (float(negative) / float(total))
-    entropy = 0.0
-    if posRatio != 0:
-        entropy = -posRatio * log(posRatio, 2)
-    if negRatio != 0:
-        entropy -= negRatio * log (negRatio, 2)
-    return entropy
- 
-featureValSet = [1, 2, 3, 4, 5]
-
-def calculateOccurences(Xdata, Ydata, featureNum):
-    count = 0
-    # count of pos and neg for 5 vals
-    pos = [0] * 5
-    neg = [0] * 5
-    for i in range(0, len(Xdata)):
-        # print Xdata[i][featureNum]-1
-        if Ydata[i] == 1:
-            pos[Xdata[i][featureNum]-1] += 1
-        else:
-            neg[Xdata[i][featureNum]-1] += 1
-    return pos,neg
-
-def getMaxInfoGainFeature(remainingFeatures, Xdata, Ydata):
-    positive = Ydata.count(1)
-    negative = Ydata.count(0)
-    total = positive + negative
-    
-    rootEntropy = getEntropy(positive, negative, total)
-    
-    print "ROOT: p=", positive, " n=", negative, " e=", rootEntropy
-    featureEntropy = []
-    for feature in remainingFeatures:
-        pos, neg = calculateOccurences(Xdata, Ydata, feature)
-        infoGainSum = 0
-        print "For Feature ", feature
-        print "p=", pos, " n=", neg
-        
-        inforGainSum = 0
-        for i in range(len(pos)):
-            cTotal = pos[i] + neg[i]
-            if cTotal > 0:
-                cEntropy = getEntropy(pos[i], neg[i], cTotal)
-                infoGainSum += (float(cTotal)/float(total)) * float(cEntropy)
-        infoGain = rootEntropy - infoGainSum
-        featureEntropy.append(infoGain)  
-    maxGain = featureEntropy.index(max(featureEntropy))
-    print "Feature Entropy", featureEntropy
-    print "Max: ", max(featureEntropy)
-    return remainingFeatures[maxGain]
-
-def createId3TreeRec(Xdata, Ydata, fSet):
-    nextRoot = getMaxInfoGainFeature(fSet, Xdata, Ydata)
+def createId3TreeRec(Data, fSet):
+    if len(fSet) == 0:
+        return -1;
+    nextRoot = getMaxInfoGainFeature(fSet, Data)
     print "Next Root", nextRoot 
+    root = TreeNode(nextRoot)
+
+    if nextRoot == 'T' or nextRoot == 'F':
+        return root
+    fSet.remove(nextRoot)    
+    for i in range(0, 5):
+        featureWise = Data[nextRoot] == i+1
+        nData = Data[featureWise]
+        if nData.shape[0] > 0:
+            root.nodes[i] = createId3TreeRec(nData, fSet)
+        else:
+            root.nodes[i] = -1
+    return root
 
 def create_id3_tree(Xdata, Ydata):
     print "XDATA"
@@ -137,7 +176,8 @@ def create_id3_tree(Xdata, Ydata):
     print "YDATA"
     print len(Ydata)
     featureSet = list(range(0,num_feats))
-    createId3TreeRec(Xdata, Ydata, featureSet)
+    mergedData = pd.concat([Xdata, Ydata], axis = 1)
+    return createId3TreeRec(mergedData, featureSet)
    
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', required=True)
@@ -163,7 +203,9 @@ Xtrain, Ytrain, Xtest = load_data(Xtrain_name, Xtest_name)
 
 print("Training...")
 # s = create_random_tree(4)
-s = create_id3_tree(Xtrain, Ytrain)
+XTrainDF = pd.DataFrame(Xtrain)
+YTrainDF = pd.DataFrame(Ytrain, columns=['Label'])
+s = create_id3_tree(XTrainDF, YTrainDF)
 s.save_tree(tree_name)
 print("Testing...")
 Ypredict = []
