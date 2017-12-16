@@ -5,6 +5,9 @@ import csv
 import numpy as np
 import pandas as pd
 from math import log
+from scipy.stats import chisquare
+import sys
+sys.setrecursionlimit(10000)
 
 '''
 TreeNode represents a node in your decision tree
@@ -20,10 +23,13 @@ TreeNode can be:
 '''
 
 # DO NOT CHANGE THIS CLASS
+countG = 0
 class TreeNode():
     def __init__(self, data='T',children=[-1]*5):
         self.nodes = list(children)
         self.data = data
+        global countG
+        countG += 1
 
 
     def save_tree(self,filename):
@@ -58,7 +64,9 @@ def load_data(ftrain, ftest):
 
 num_feats = 274
 
-
+# 
+# Computes the entropy for given positive negative and total
+#
 def getEntropy(positive, negative, total):
     posRatio = (float(positive) / float(total))
     negRatio = (float(negative) / float(total))
@@ -66,18 +74,19 @@ def getEntropy(positive, negative, total):
     if posRatio != 0:
         entropy = -posRatio * log(posRatio, 2)
     if negRatio != 0:
-        entropy -= negRatio * log (negRatio, 2)
+        entropy -= negRatio * log(negRatio, 2)
     return entropy
  
-#featureValSet = [1, 2, 3, 4, 5]
-
+#
+# Calculates number of positive and negative label occurence 
+# in given data
+#
 def calculateOccurences(Data, featureNum):
     count = 0
     # count of pos and neg for 5 vals
     pos = [0] * 5
     neg = [0] * 5
-    # Using pandas
-
+    
     for i in range(0, len(pos)):
         yPos = Data['Label'] == 1
         yNeg = Data['Label'] == 0
@@ -85,30 +94,45 @@ def calculateOccurences(Data, featureNum):
         pos[i] = Data[xPos & yPos].shape[0]
         neg[i] = Data[yNeg & xPos].shape[0]
     return pos,neg
-    '''
-    # Serial code where data is in array
-    for i in range(0, len(Xdata)):
-        # print Xdata[i][featureNum]-1
-        if Ydata[i] == 1:
-            pos[Xdata[i][featureNum]-1] += 1
-        else:
-            neg[Xdata[i][featureNum]-1] += 1
-    return pos,neg
-    '''
+    
 
+#
+# returns Chi-Square Value for given data
+#
+def getChiSquareVal(p, n, N, Data, selectedFeature):
+    p_prime = []
+    p_obs = [] 
+    for i in range(0, 5):
+        yPos = Data['Label'] == 1
+        yNeg = Data['Label'] == 0
+        xPos = Data[selectedFeature] == i+1
+        tmpP = float(Data[xPos & yPos].shape[0])
+        tmpN = float(Data[xPos & yNeg].shape[0])
+        L = Data[xPos].shape[0]
+        if tmpP + tmpN > 0:
+            p_obs.append(tmpP)
+            p_obs.append(tmpN)
+            p_prime.append(float(L) * float(Data[yPos].shape[0]) / float(N))
+            p_prime.append(float(L) * float(Data[yNeg].shape[0]) / float(N))
+
+    expected = p_prime 
+    observed = p_obs 
+    return chisquare(observed, expected)
+
+#
+# Returns attribute with maxInfoGain
+#
 def getMaxInfoGainFeature(remainingFeatures, Data):
 
     positive = Data[Data['Label'] == 1].shape[0]
     negative = Data[Data['Label'] == 0].shape[0]
-
-    #positive = Ydata.count(1)
-    #negative = Ydata.count(0)
     total = positive + negative
     
     rootEntropy = getEntropy(positive, negative, total)
     
-    print "ROOT: p=", positive, " n=", negative, " e=", rootEntropy
     if rootEntropy == 0:
+        # If root entropy is 0
+        # print "WARNING: ROOT ENTROPY 0"
         if total == positive:
             return 'T'
         else:
@@ -118,24 +142,38 @@ def getMaxInfoGainFeature(remainingFeatures, Data):
     for feature in remainingFeatures:
         pos, neg = calculateOccurences(Data, feature)
         infoGainSum = 0
-        #print "For Feature ", feature
-        #print "p=", pos, " n=", neg
         
-        inforGainSum = 0
         for i in range(len(pos)):
             cTotal = pos[i] + neg[i]
             if cTotal > 0:
                 cEntropy = getEntropy(pos[i], neg[i], cTotal)
                 infoGainSum += (float(cTotal)/float(total)) * float(cEntropy)
         infoGain = rootEntropy - infoGainSum
-        featureEntropy.append(infoGain)  
-    #print "Feature Entropy", featureEntropy
+        featureEntropy.append(infoGain)
+        
     maxGain = featureEntropy.index(max(featureEntropy))
-    #print "Max: ", max(featureEntropy)
-    return remainingFeatures[maxGain]
+    selectedFeature = remainingFeatures[maxGain]
+    # if InfoGain is 0 return current optimal attribute
+    if max(featureEntropy) == 0:
+        return getMaxPossibleVal(Data)
+    
+    cVal = getChiSquareVal(positive, negative, total, Data, selectedFeature)
+    
+    
+    if cVal.pvalue > pval:
+        yPos = Data['Label'] == 1
+        yNeg = Data['Label'] == 0
+        pos = Data[yPos].shape[0]
+        neg = Data[yNeg].shape[0]
+        if pos > neg:
+            return 'T'
+        else:
+            return 'F'
+    del remainingFeatures[maxGain]
+    return selectedFeature
 
 
-#A random tree construction for illustration, do not use this in your code!
+# A random tree construction for illustration, do not use this in your code!
 def create_random_tree(depth):
     if(depth >= 7):
         if(random.randint(0,1)==0):
@@ -150,35 +188,80 @@ def create_random_tree(depth):
         root.nodes[i] = create_random_tree(depth+1)
     return root
 
+#
+# Returns Optimal Value in current Data
+#
+def getMaxPossibleVal(Data):
+    yPos = Data['Label'] == 1
+    yNeg = Data['Label'] == 0
+    pos = Data[yPos].shape[0]
+    neg = Data[yNeg].shape[0]
+    if pos > neg:
+        return 'T'
+    else:
+        return 'F'
 
+#
+# Returns Optimal TreeNode in current Data
+#
+def getMaxPossibleNode(Data):
+    yPos = Data['Label'] == 1
+    yNeg = Data['Label'] == 0
+    pos = Data[yPos].shape[0]
+    neg = Data[yNeg].shape[0]
+    if pos > neg:
+        return TreeNode('T')
+    else:
+        return TreeNode('F')
+#
+# Creates Id3Tree recursively
+#   
 def createId3TreeRec(Data, fSet):
-    if len(fSet) == 0:
-        return -1;
+    positive = Data[Data['Label'] == 1].shape[0]
+    negative = Data[Data['Label'] == 0].shape[0]
+    total = Data['Label'].shape[0]
+    
+    # Initial conditions
+    # Return if -
+    #           1. All positive
+    #           2. All negative
+    #           3. No attribute remaining
+    if positive == total:
+        return TreeNode('T')
+    elif negative == total:
+        return TreeNode('F')
+    elif len(fSet) == 0:
+        return getMaxPossibleNode(Data)
+    
+    # Get optimal attribute
     nextRoot = getMaxInfoGainFeature(fSet, Data)
-    print "Next Root", nextRoot 
-    root = TreeNode(nextRoot)
-
+    
+    # If leaf node then exit
     if nextRoot == 'T' or nextRoot == 'F':
-        return root
-    fSet.remove(nextRoot)    
+        return TreeNode(nextRoot)
+    
+    root = TreeNode(nextRoot+1)
+   
     for i in range(0, 5):
         featureWise = Data[nextRoot] == i+1
         nData = Data[featureWise]
+        
         if nData.shape[0] > 0:
             root.nodes[i] = createId3TreeRec(nData, fSet)
         else:
-            root.nodes[i] = -1
+            root.nodes[i] = getMaxPossibleNode(Data)
     return root
 
+#
+# Creates and returns ID3 Tree
+#
 def create_id3_tree(Xdata, Ydata):
-    print "XDATA"
-    print len(Xdata), len(Xdata[0])
-    print "YDATA"
-    print len(Ydata)
     featureSet = list(range(0,num_feats))
     mergedData = pd.concat([Xdata, Ydata], axis = 1)
     return createId3TreeRec(mergedData, featureSet)
-   
+
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', required=True)
 parser.add_argument('-f1', help='training file in csv format', required=True)
@@ -188,7 +271,7 @@ parser.add_argument('-t', help='output tree filename', required=True)
 
 args = vars(parser.parse_args())
 
-pval = args['p']
+pval = float(args['p'])
 Xtrain_name = args['f1']
 Ytrain_name = args['f1'].split('.')[0]+ '_labels.csv' #labels filename will be the same as training file name but with _label at the end
 
@@ -197,32 +280,50 @@ Ytest_predict_name = args['o']
 
 tree_name = args['t']
 
-
-
 Xtrain, Ytrain, Xtest = load_data(Xtrain_name, Xtest_name)
 
-print("Training...")
+
+
+# In[162]:
+
+
+#print("Training...")
 # s = create_random_tree(4)
 XTrainDF = pd.DataFrame(Xtrain)
 YTrainDF = pd.DataFrame(Ytrain, columns=['Label'])
 s = create_id3_tree(XTrainDF, YTrainDF)
+
+# In[163]:
+
+
+print 'COUNTG', countG
+# In[83]:
+
+
+#s.data, s.nodes
+
+
+# In[166]:
+
+
+tree_name = "tree.pkl"
 s.save_tree(tree_name)
-print("Testing...")
+def evaluate_datapoint(root,datapoint):
+    if root.data == 'T': return 1
+    if root.data =='F': return 0
+    return evaluate_datapoint(root.nodes[datapoint[int(root.data)-1]-1], datapoint)
+
+#Ytest_predict_name = "output1.csv"
 Ypredict = []
-#generate random labels
+#root = pkl.load(open('tree.pkl','r'))
+root = s
 for i in range(0,len(Xtest)):
-	Ypredict.append([np.random.randint(0,2)])
+    Ypredict.append([evaluate_datapoint(root,Xtest[i])])
 
 with open(Ytest_predict_name, "wb") as f:
     writer = csv.writer(f)
     writer.writerows(Ypredict)
 
 print("Output files generated")
-
-
-
-
-
-
 
 
