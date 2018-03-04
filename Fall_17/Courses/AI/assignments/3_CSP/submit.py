@@ -231,12 +231,6 @@ def CP(L, M):
     "*** YOUR CODE HERE ***"
     return -1,[]
 
-print BT(1,1)
-print BT(1,0)
-print FC(1,1)
-print FC(1,0)
-print FC(1,2)
-print FC(0,1)
 '''
 print BT(5, 4)
 print FC(5, 4)
